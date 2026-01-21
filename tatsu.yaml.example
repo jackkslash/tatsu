@@ -1,0 +1,9 @@
+agent:
+  # Command to run your AI agent
+  # %s will be replaced with the task description
+  command: 'opencode run "%s"'
+
+validate:
+  # Command to check if the task is complete
+  # Should exit with code 0 on success
+  command: 'go test ./...'

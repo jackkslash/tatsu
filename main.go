@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/jack/tatsu/config"
 )
 
 const Version = "0.1.0"
@@ -36,6 +38,18 @@ func main() {
 
 func runTask(task string) {
 	fmt.Printf("🎯 Task: %s\n\n", task)
+
+	// Load config
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Printf("❌ %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("✅ Configuration loaded successfully")
+	fmt.Printf("   Agent: %s\n", cfg.Agent.Command)
+	fmt.Printf("   Validate: %s\n\n", cfg.Validate.Command)
+
 	fmt.Println("⚠️  Task execution not yet implemented")
 }
 
