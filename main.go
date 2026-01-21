@@ -6,6 +6,7 @@ import (
 
 	"github.com/jack/tatsu/config"
 	"github.com/jack/tatsu/harness"
+	"github.com/jack/tatsu/runner"
 )
 
 const Version = "0.1.0"
@@ -61,7 +62,12 @@ func runTask(task string) {
 
 	fmt.Printf("✅ %s is available\n\n", h.Name())
 
-	fmt.Println("⚠️  Task execution not yet implemented")
+	// Run task with runner
+	r := runner.New(cfg, h)
+	if err := r.Run(task); err != nil {
+		fmt.Printf("⚠️  %v\n", err)
+		os.Exit(1)
+	}
 }
 
 func printUsage() {
