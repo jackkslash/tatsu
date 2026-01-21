@@ -1,0 +1,50 @@
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+const Version = "0.1.0"
+
+func main() {
+	// Parse args
+	if len(os.Args) < 2 {
+		printUsage()
+		os.Exit(1)
+	}
+
+	command := os.Args[1]
+
+	switch command {
+	case "run":
+		if len(os.Args) < 3 {
+			fmt.Println("❌ Error: task description required")
+			printUsage()
+			os.Exit(1)
+		}
+		task := os.Args[2]
+		runTask(task)
+	case "version", "--version", "-v":
+		fmt.Printf("tatsu v%s\n", Version)
+	default:
+		fmt.Printf("❌ Unknown command: %s\n\n", command)
+		printUsage()
+		os.Exit(1)
+	}
+}
+
+func runTask(task string) {
+	fmt.Printf("🎯 Task: %s\n\n", task)
+	fmt.Println("⚠️  Task execution not yet implemented")
+}
+
+func printUsage() {
+	fmt.Println("tatsu v" + Version)
+	fmt.Println("\nUsage:")
+	fmt.Println("  tatsu run \"task description\"")
+	fmt.Println("  tatsu version")
+	fmt.Println("\nExample:")
+	fmt.Println("  tatsu run \"add unit tests to the parser\"")
+	fmt.Println("\nRequires tatsu.yaml in current directory")
+}
