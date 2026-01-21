@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/jack/tatsu/config"
+	"github.com/jack/tatsu/harness"
 )
 
 const Version = "0.1.0"
@@ -49,6 +50,16 @@ func runTask(task string) {
 	fmt.Println("✅ Configuration loaded successfully")
 	fmt.Printf("   Agent: %s\n", cfg.Agent.Command)
 	fmt.Printf("   Validate: %s\n\n", cfg.Validate.Command)
+
+	// Check harness availability
+	h := harness.NewOpenCodeHarness()
+	if !h.IsAvailable() {
+		fmt.Printf("❌ %s is not installed or not in PATH\n", h.Name())
+		fmt.Println("   Install from: https://github.com/EmbeddedLLM/opencode")
+		os.Exit(1)
+	}
+
+	fmt.Printf("✅ %s is available\n\n", h.Name())
 
 	fmt.Println("⚠️  Task execution not yet implemented")
 }
