@@ -29,6 +29,17 @@ func main() {
 		}
 		task := os.Args[2]
 		runTask(task)
+	case "generate", "gen":
+		force := false
+		if len(os.Args) > 2 {
+			for _, arg := range os.Args[2:] {
+				if arg == "--force" || arg == "-f" {
+					force = true
+					break
+				}
+			}
+		}
+		generateConfig(force)
 	case "version", "--version", "-v":
 		fmt.Printf("tatsu v%s\n", Version)
 	default:
@@ -40,6 +51,17 @@ func main() {
 
 func runTask(task string) {
 	fmt.Printf("🎯 Task: %s\n\n", task)
+
+	// Check if config exists, generate if not
+	if _, err := os.Stat("tatsu.yaml"); os.IsNotExist(err) {
+		fmt.Println("📝 No tatsu.yaml found. Generating configuration...")
+		if err := config.Generate(false); err != nil {
+			fmt.Printf("❌ Failed to generate config: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("✅ Created tatsu.yaml")
+		fmt.Println("   (Run 'tatsu generate --force' to regenerate)")
+	}
 
 	// Load config
 	cfg, err := config.Load()
@@ -70,12 +92,33 @@ func runTask(task string) {
 	}
 }
 
+func generateConfig(force bool) {
+	if force {
+		fmt.Println("🔧 Generating tatsu.yaml (overwriting existing file)...")
+	} else {
+		fmt.Println("🔧 Generating tatsu.yaml...")
+	}
+
+	if err := config.Generate(force); err != nil {
+		fmt.Printf("❌ %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("✅ Created tatsu.yaml")
+	fmt.Println("\n📝 Review and update the configuration as needed:")
+	fmt.Println("   - agent.command: Your AI agent command")
+	fmt.Println("   - validate.command: Your test/validation command")
+}
+
 func printUsage() {
 	fmt.Println("tatsu v" + Version)
 	fmt.Println("\nUsage:")
-	fmt.Println("  tatsu run \"task description\"")
-	fmt.Println("  tatsu version")
-	fmt.Println("\nExample:")
+	fmt.Println("  tatsu run \"task description\"  Run a task")
+	fmt.Println("  tatsu generate [--force]       Generate tatsu.yaml")
+	fmt.Println("  tatsu version                  Show version")
+	fmt.Println("\nExamples:")
 	fmt.Println("  tatsu run \"add unit tests to the parser\"")
-	fmt.Println("\nRequires tatsu.yaml in current directory")
+	fmt.Println("  tatsu generate")
+	fmt.Println("  tatsu generate --force")
+	fmt.Println("\nNote: tatsu.yaml will be auto-generated on first run if it doesn't exist")
 }
