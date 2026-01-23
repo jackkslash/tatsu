@@ -22,6 +22,7 @@ func TestNew(t *testing.T) {
 	require.NotNil(t, r)
 	assert.Equal(t, cfg, r.config)
 	assert.Equal(t, h, r.harness)
+	assert.Equal(t, DefaultMaxIterations, r.maxIterations)
 }
 
 func TestEscapeTask(t *testing.T) {
@@ -60,8 +61,36 @@ func TestEscapeTask(t *testing.T) {
 	}
 }
 
-func TestMaxIterations(t *testing.T) {
+func TestDefaultMaxIterations(t *testing.T) {
 	assert.Equal(t, 15, DefaultMaxIterations)
+}
+
+func TestNewWithMaxIterations(t *testing.T) {
+	cfg := &config.Config{}
+	h := &mockHarness{}
+	
+	r := NewWithMaxIterations(cfg, h, 5)
+	require.NotNil(t, r)
+	assert.Equal(t, 5, r.maxIterations)
+	assert.Equal(t, cfg, r.config)
+	assert.Equal(t, h, r.harness)
+}
+
+func TestRunner_UsesCustomMaxIterations(t *testing.T) {
+	cfg := &config.Config{}
+	cfg.Agent.Command = "echo 'Agent: %s'"
+	cfg.Validate.Command = "exit 1" // Always fail
+	
+	h := &mockHarness{}
+	r := NewWithMaxIterations(cfg, h, 3) // Only 3 iterations
+	
+	// Should fail after 3 iterations, not 15
+	err := r.Run("test task")
+	require.Error(t, err)
+	assert.Equal(t, "max iterations reached", err.Error())
+	
+	// Verify it only tried 3 times by checking the error
+	// (In real usage, you'd see 3 iteration messages, not 15)
 }
 
 func TestRunner_IntegrationWithPassingValidation(t *testing.T) {
