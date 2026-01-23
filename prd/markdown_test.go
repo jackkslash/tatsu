@@ -2,6 +2,9 @@ package prd
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseMarkdown_BasicTaskList(t *testing.T) {
@@ -13,37 +16,19 @@ func TestParseMarkdown_BasicTaskList(t *testing.T) {
 `
 
 	prd, err := ParseMarkdown(content)
-	if err != nil {
-		t.Fatalf("ParseMarkdown() error = %v", err)
-	}
+	require.NoError(t, err)
 
-	if prd.TotalCount() != 4 {
-		t.Errorf("TotalCount() = %d, want 4", prd.TotalCount())
-	}
-
-	if prd.CompletedCount() != 1 {
-		t.Errorf("CompletedCount() = %d, want 1", prd.CompletedCount())
-	}
-
-	if len(prd.IncompleteTasks()) != 3 {
-		t.Errorf("IncompleteTasks() count = %d, want 3", len(prd.IncompleteTasks()))
-	}
+	assert.Equal(t, 4, prd.TotalCount())
+	assert.Equal(t, 1, prd.CompletedCount())
+	assert.Len(t, prd.IncompleteTasks(), 3)
 
 	// Check first task
-	if prd.Tasks[0].Title != "create authentication system" {
-		t.Errorf("Tasks[0].Title = %q, want %q", prd.Tasks[0].Title, "create authentication system")
-	}
-	if prd.Tasks[0].Completed {
-		t.Error("Tasks[0].Completed = true, want false")
-	}
+	assert.Equal(t, "create authentication system", prd.Tasks[0].Title)
+	assert.False(t, prd.Tasks[0].Completed)
 
 	// Check completed task
-	if prd.Tasks[3].Title != "setup database (already done)" {
-		t.Errorf("Tasks[3].Title = %q, want %q", prd.Tasks[3].Title, "setup database (already done)")
-	}
-	if !prd.Tasks[3].Completed {
-		t.Error("Tasks[3].Completed = false, want true")
-	}
+	assert.Equal(t, "setup database (already done)", prd.Tasks[3].Title)
+	assert.True(t, prd.Tasks[3].Completed)
 }
 
 func TestParseMarkdown_UppercaseX(t *testing.T) {
@@ -52,17 +37,10 @@ func TestParseMarkdown_UppercaseX(t *testing.T) {
 `
 
 	prd, err := ParseMarkdown(content)
-	if err != nil {
-		t.Fatalf("ParseMarkdown() error = %v", err)
-	}
+	require.NoError(t, err)
 
-	if !prd.Tasks[0].Completed {
-		t.Error("Tasks[0].Completed = false, want true (uppercase X should be completed)")
-	}
-
-	if prd.Tasks[1].Completed {
-		t.Error("Tasks[1].Completed = true, want false")
-	}
+	assert.True(t, prd.Tasks[0].Completed, "uppercase X should be completed")
+	assert.False(t, prd.Tasks[1].Completed)
 }
 
 func TestParseMarkdown_WithIndentation(t *testing.T) {
@@ -72,18 +50,10 @@ func TestParseMarkdown_WithIndentation(t *testing.T) {
 `
 
 	prd, err := ParseMarkdown(content)
-	if err != nil {
-		t.Fatalf("ParseMarkdown() error = %v", err)
-	}
+	require.NoError(t, err)
 
-	if prd.TotalCount() != 3 {
-		t.Errorf("TotalCount() = %d, want 3", prd.TotalCount())
-	}
-
-	// Check that indentation is preserved in title
-	if prd.Tasks[0].Title != "indented task" {
-		t.Errorf("Tasks[0].Title = %q, want %q", prd.Tasks[0].Title, "indented task")
-	}
+	assert.Equal(t, 3, prd.TotalCount())
+	assert.Equal(t, "indented task", prd.Tasks[0].Title)
 }
 
 func TestParseMarkdown_EmptyContent(t *testing.T) {
@@ -92,18 +62,11 @@ No tasks here
 `
 
 	_, err := ParseMarkdown(content)
-	if err == nil {
-		t.Fatal("ParseMarkdown() expected error for empty task list, got nil")
-	}
+	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
-	if !ok {
-		t.Fatalf("expected ParseError, got %T", err)
-	}
-
-	if parseErr.Message != "no tasks found in markdown" {
-		t.Errorf("ParseError.Message = %q, want %q", parseErr.Message, "no tasks found in markdown")
-	}
+	require.True(t, ok, "expected ParseError")
+	assert.Equal(t, "no tasks found in markdown", parseErr.Message)
 }
 
 func TestParseMarkdown_EmptyTaskTitle(t *testing.T) {
@@ -112,18 +75,11 @@ func TestParseMarkdown_EmptyTaskTitle(t *testing.T) {
 `
 
 	prd, err := ParseMarkdown(content)
-	if err != nil {
-		t.Fatalf("ParseMarkdown() error = %v", err)
-	}
+	require.NoError(t, err)
 
 	// Empty task should be skipped
-	if prd.TotalCount() != 1 {
-		t.Errorf("TotalCount() = %d, want 1 (empty task should be skipped)", prd.TotalCount())
-	}
-
-	if prd.Tasks[0].Title != "valid task" {
-		t.Errorf("Tasks[0].Title = %q, want %q", prd.Tasks[0].Title, "valid task")
-	}
+	assert.Equal(t, 1, prd.TotalCount(), "empty task should be skipped")
+	assert.Equal(t, "valid task", prd.Tasks[0].Title)
 }
 
 func TestParseMarkdown_StarAndPlusBullets(t *testing.T) {
@@ -132,25 +88,12 @@ func TestParseMarkdown_StarAndPlusBullets(t *testing.T) {
 `
 
 	prd, err := ParseMarkdown(content)
-	if err != nil {
-		t.Fatalf("ParseMarkdown() error = %v", err)
-	}
+	require.NoError(t, err)
 
-	if prd.TotalCount() != 2 {
-		t.Errorf("TotalCount() = %d, want 2", prd.TotalCount())
-	}
-
-	if prd.Tasks[0].Title != "star bullet" {
-		t.Errorf("Tasks[0].Title = %q, want %q", prd.Tasks[0].Title, "star bullet")
-	}
-
-	if prd.Tasks[1].Title != "plus bullet completed" {
-		t.Errorf("Tasks[1].Title = %q, want %q", prd.Tasks[1].Title, "plus bullet completed")
-	}
-
-	if !prd.Tasks[1].Completed {
-		t.Error("Tasks[1].Completed = false, want true")
-	}
+	assert.Equal(t, 2, prd.TotalCount())
+	assert.Equal(t, "star bullet", prd.Tasks[0].Title)
+	assert.Equal(t, "plus bullet completed", prd.Tasks[1].Title)
+	assert.True(t, prd.Tasks[1].Completed)
 }
 
 func TestParseMarkdown_MixedContent(t *testing.T) {
@@ -168,16 +111,9 @@ Some other content here.
 `
 
 	prd, err := ParseMarkdown(content)
-	if err != nil {
-		t.Fatalf("ParseMarkdown() error = %v", err)
-	}
+	require.NoError(t, err)
 
-	if prd.TotalCount() != 3 {
-		t.Errorf("TotalCount() = %d, want 3", prd.TotalCount())
-	}
-
+	assert.Equal(t, 3, prd.TotalCount())
 	// Should only extract task list items, ignoring other content
-	if prd.Tasks[0].Title != "first task" {
-		t.Errorf("Tasks[0].Title = %q, want %q", prd.Tasks[0].Title, "first task")
-	}
+	assert.Equal(t, "first task", prd.Tasks[0].Title)
 }

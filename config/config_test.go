@@ -2,8 +2,10 @@ package config
 
 import (
 	"os"
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLoad_Success(t *testing.T) {
@@ -13,24 +15,16 @@ func TestLoad_Success(t *testing.T) {
 validate:
   command: 'go test ./...'
 `
-	if err := os.WriteFile("tatsu.yaml", []byte(content), 0644); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile("tatsu.yaml", []byte(content), 0644))
 	defer os.Remove("tatsu.yaml")
 
 	// Load config
 	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() error = %v", err)
-	}
+	require.NoError(t, err)
 
 	// Verify config values
-	if cfg.Agent.Command != `opencode run "%s"` {
-		t.Errorf("Agent.Command = %q, want %q", cfg.Agent.Command, `opencode run "%s"`)
-	}
-	if cfg.Validate.Command != "go test ./..." {
-		t.Errorf("Validate.Command = %q, want %q", cfg.Validate.Command, "go test ./...")
-	}
+	assert.Equal(t, `opencode run "%s"`, cfg.Agent.Command)
+	assert.Equal(t, "go test ./...", cfg.Validate.Command)
 }
 
 func TestLoad_FileNotFound(t *testing.T) {
@@ -39,14 +33,8 @@ func TestLoad_FileNotFound(t *testing.T) {
 
 	// Attempt to load
 	_, err := Load()
-	if err == nil {
-		t.Fatal("Load() expected error for missing file, got nil")
-	}
-
-	// Verify error message mentions file not found
-	if !strings.Contains(err.Error(), "tatsu.yaml not found") {
-		t.Errorf("expected error to contain 'tatsu.yaml not found', got: %v", err)
-	}
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "tatsu.yaml not found")
 }
 
 func TestLoad_InvalidYAML(t *testing.T) {
@@ -55,16 +43,12 @@ func TestLoad_InvalidYAML(t *testing.T) {
   command: 'test
 invalid yaml here
 `
-	if err := os.WriteFile("tatsu.yaml", []byte(content), 0644); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile("tatsu.yaml", []byte(content), 0644))
 	defer os.Remove("tatsu.yaml")
 
 	// Attempt to load
 	_, err := Load()
-	if err == nil {
-		t.Fatal("Load() expected error for invalid YAML, got nil")
-	}
+	require.Error(t, err)
 }
 
 func TestLoad_MissingAgentCommand(t *testing.T) {
@@ -72,19 +56,13 @@ func TestLoad_MissingAgentCommand(t *testing.T) {
 	content := `validate:
   command: 'go test ./...'
 `
-	if err := os.WriteFile("tatsu.yaml", []byte(content), 0644); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile("tatsu.yaml", []byte(content), 0644))
 	defer os.Remove("tatsu.yaml")
 
 	// Attempt to load
 	_, err := Load()
-	if err == nil {
-		t.Fatal("Load() expected error for missing agent.command, got nil")
-	}
-	if err.Error() != "agent.command is required in tatsu.yaml" {
-		t.Errorf("unexpected error: %v", err)
-	}
+	require.Error(t, err)
+	assert.Equal(t, "agent.command is required in tatsu.yaml", err.Error())
 }
 
 func TestLoad_MissingValidateCommand(t *testing.T) {
@@ -92,19 +70,13 @@ func TestLoad_MissingValidateCommand(t *testing.T) {
 	content := `agent:
   command: 'opencode run "%s"'
 `
-	if err := os.WriteFile("tatsu.yaml", []byte(content), 0644); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile("tatsu.yaml", []byte(content), 0644))
 	defer os.Remove("tatsu.yaml")
 
 	// Attempt to load
 	_, err := Load()
-	if err == nil {
-		t.Fatal("Load() expected error for missing validate.command, got nil")
-	}
-	if err.Error() != "validate.command is required in tatsu.yaml" {
-		t.Errorf("unexpected error: %v", err)
-	}
+	require.Error(t, err)
+	assert.Equal(t, "validate.command is required in tatsu.yaml", err.Error())
 }
 
 func TestGenerate_FileDoesNotExist(t *testing.T) {
@@ -113,25 +85,18 @@ func TestGenerate_FileDoesNotExist(t *testing.T) {
 	defer os.Remove("tatsu.yaml")
 
 	// Generate config
-	if err := Generate(false); err != nil {
-		t.Fatalf("Generate() error = %v", err)
-	}
+	require.NoError(t, Generate(false))
 
 	// Verify file was created
-	if _, err := os.Stat("tatsu.yaml"); os.IsNotExist(err) {
-		t.Fatal("tatsu.yaml was not created")
-	}
+	_, err := os.Stat("tatsu.yaml")
+	require.NoError(t, err, "tatsu.yaml was not created")
 
 	// Verify we can load it
 	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() error = %v", err)
-	}
+	require.NoError(t, err)
 
 	// Verify default agent command
-	if cfg.Agent.Command != `opencode run "%s"` {
-		t.Errorf("Agent.Command = %q, want %q", cfg.Agent.Command, `opencode run "%s"`)
-	}
+	assert.Equal(t, `opencode run "%s"`, cfg.Agent.Command)
 }
 
 func TestGenerate_FileExistsWithoutForce(t *testing.T) {
@@ -141,21 +106,13 @@ func TestGenerate_FileExistsWithoutForce(t *testing.T) {
 validate:
   command: 'go test ./...'
 `
-	if err := os.WriteFile("tatsu.yaml", []byte(content), 0644); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile("tatsu.yaml", []byte(content), 0644))
 	defer os.Remove("tatsu.yaml")
 
 	// Attempt to generate without force
 	err := Generate(false)
-	if err == nil {
-		t.Fatal("Generate() expected error when file exists, got nil")
-	}
-
-	// Verify error message mentions --force
-	if !strings.Contains(err.Error(), "already exists") {
-		t.Errorf("expected error to contain 'already exists', got: %v", err)
-	}
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "already exists")
 }
 
 func TestGenerate_FileExistsWithForce(t *testing.T) {
@@ -165,26 +122,18 @@ func TestGenerate_FileExistsWithForce(t *testing.T) {
 validate:
   command: 'old test'
 `
-	if err := os.WriteFile("tatsu.yaml", []byte(oldContent), 0644); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile("tatsu.yaml", []byte(oldContent), 0644))
 	defer os.Remove("tatsu.yaml")
 
 	// Generate with force
-	if err := Generate(true); err != nil {
-		t.Fatalf("Generate() error = %v", err)
-	}
+	require.NoError(t, Generate(true))
 
 	// Verify file was overwritten and can be loaded
 	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() error = %v", err)
-	}
+	require.NoError(t, err)
 
 	// Verify it has the default agent command (not the old one)
-	if cfg.Agent.Command != `opencode run "%s"` {
-		t.Errorf("Agent.Command = %q, want %q", cfg.Agent.Command, `opencode run "%s"`)
-	}
+	assert.Equal(t, `opencode run "%s"`, cfg.Agent.Command)
 }
 
 func TestGenerate_DetectsGoProject(t *testing.T) {
@@ -194,24 +143,16 @@ func TestGenerate_DetectsGoProject(t *testing.T) {
 	defer os.Remove("go.mod")
 
 	// Create go.mod to simulate Go project
-	if err := os.WriteFile("go.mod", []byte("module test\n"), 0644); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile("go.mod", []byte("module test\n"), 0644))
 
 	// Generate config
-	if err := Generate(false); err != nil {
-		t.Fatalf("Generate() error = %v", err)
-	}
+	require.NoError(t, Generate(false))
 
 	// Load and verify
 	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() error = %v", err)
-	}
+	require.NoError(t, err)
 
-	if cfg.Validate.Command != "go test ./..." {
-		t.Errorf("Validate.Command = %q, want %q", cfg.Validate.Command, "go test ./...")
-	}
+	assert.Equal(t, "go test ./...", cfg.Validate.Command)
 }
 
 func TestGenerate_DetectsNodeProject(t *testing.T) {
@@ -221,24 +162,16 @@ func TestGenerate_DetectsNodeProject(t *testing.T) {
 	defer os.Remove("package.json")
 
 	// Create package.json to simulate Node project
-	if err := os.WriteFile("package.json", []byte(`{"name": "test"}`), 0644); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, os.WriteFile("package.json", []byte(`{"name": "test"}`), 0644))
 
 	// Generate config
-	if err := Generate(false); err != nil {
-		t.Fatalf("Generate() error = %v", err)
-	}
+	require.NoError(t, Generate(false))
 
 	// Load and verify
 	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() error = %v", err)
-	}
+	require.NoError(t, err)
 
-	if cfg.Validate.Command != "npm test" {
-		t.Errorf("Validate.Command = %q, want %q", cfg.Validate.Command, "npm test")
-	}
+	assert.Equal(t, "npm test", cfg.Validate.Command)
 }
 
 func TestGenerate_DefaultFallback(t *testing.T) {
@@ -252,19 +185,13 @@ func TestGenerate_DefaultFallback(t *testing.T) {
 	os.Remove("Cargo.toml")
 
 	// Generate config
-	if err := Generate(false); err != nil {
-		t.Fatalf("Generate() error = %v", err)
-	}
+	require.NoError(t, Generate(false))
 
 	// Load and verify
 	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() error = %v", err)
-	}
+	require.NoError(t, err)
 
 	// Should have default fallback message
 	expected := "echo 'No tests configured. Update tatsu.yaml with your test command.'"
-	if cfg.Validate.Command != expected {
-		t.Errorf("Validate.Command = %q, want %q", cfg.Validate.Command, expected)
-	}
+	assert.Equal(t, expected, cfg.Validate.Command)
 }

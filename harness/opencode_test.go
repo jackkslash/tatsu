@@ -2,23 +2,20 @@ package harness
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewOpenCodeHarness(t *testing.T) {
 	h := NewOpenCodeHarness()
-	if h == nil {
-		t.Fatal("NewOpenCodeHarness() returned nil")
-	}
-	if h.command != "opencode" {
-		t.Errorf("command = %q, want %q", h.command, "opencode")
-	}
+	require.NotNil(t, h)
+	assert.Equal(t, "opencode", h.command)
 }
 
 func TestOpenCodeHarness_Name(t *testing.T) {
 	h := NewOpenCodeHarness()
-	if got := h.Name(); got != "OpenCode" {
-		t.Errorf("Name() = %q, want %q", got, "OpenCode")
-	}
+	assert.Equal(t, "OpenCode", h.Name())
 }
 
 func TestOpenCodeHarness_IsAvailable(t *testing.T) {

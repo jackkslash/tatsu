@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/jack/tatsu/config"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockHarness struct{}
@@ -17,15 +19,9 @@ func TestNew(t *testing.T) {
 	
 	r := New(cfg, h)
 	
-	if r == nil {
-		t.Fatal("New() returned nil")
-	}
-	if r.config != cfg {
-		t.Error("New() did not set config correctly")
-	}
-	if r.harness != h {
-		t.Error("New() did not set harness correctly")
-	}
+	require.NotNil(t, r)
+	assert.Equal(t, cfg, r.config)
+	assert.Equal(t, h, r.harness)
 }
 
 func TestEscapeTask(t *testing.T) {
@@ -59,17 +55,13 @@ func TestEscapeTask(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := escapeTask(tt.input)
-			if got != tt.expected {
-				t.Errorf("escapeTask(%q) = %q, want %q", tt.input, got, tt.expected)
-			}
+			assert.Equal(t, tt.expected, got)
 		})
 	}
 }
 
 func TestMaxIterations(t *testing.T) {
-	if MaxIterations != 15 {
-		t.Errorf("MaxIterations = %d, want 15", MaxIterations)
-	}
+	assert.Equal(t, 15, MaxIterations)
 }
 
 func TestRunner_IntegrationWithPassingValidation(t *testing.T) {
@@ -83,9 +75,7 @@ func TestRunner_IntegrationWithPassingValidation(t *testing.T) {
 	
 	// Run with passing validation - should succeed on first iteration
 	err := r.Run("test task")
-	if err != nil {
-		t.Errorf("Run() with passing validation returned error: %v", err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestRunner_IntegrationWithFailingValidation(t *testing.T) {
@@ -99,10 +89,6 @@ func TestRunner_IntegrationWithFailingValidation(t *testing.T) {
 	
 	// Run with failing validation - should hit max iterations
 	err := r.Run("test task")
-	if err == nil {
-		t.Error("Run() with failing validation should return error")
-	}
-	if err.Error() != "max iterations reached" {
-		t.Errorf("unexpected error: %v", err)
-	}
+	require.Error(t, err)
+	assert.Equal(t, "max iterations reached", err.Error())
 }
