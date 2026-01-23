@@ -17,7 +17,7 @@ Think of it as a persistent coding assistant that doesn't give up until your tes
 ### From Source
 
 ```bash
-git clone https://github.com/jack/tatsu.git
+git clone https://github.com/jackkslash/tatsu.git
 cd tatsu
 go install
 ```
@@ -25,116 +25,65 @@ go install
 ### Using Go Install
 
 ```bash
-go install github.com/jack/tatsu@latest
+go install github.com/jackkslash/tatsu@latest
 ```
 
 Make sure `$GOPATH/bin` is in your `PATH`.
 
 ## Quick Start
 
-1. **Create `tatsu.yaml` in your project:**
-
-```yaml
-agent:
-  command: 'opencode run "%s"'
-validate:
-  command: 'go test ./...'
-```
-
-2. **Run a task:**
+**Run a task** (config auto-generates on first run):
 
 ```bash
 tatsu run "add unit tests to the parser"
 ```
 
 Tatsu will:
-- Run OpenCode with your task
-- Run your validation command
-- Retry up to 15 times if validation fails
-- Stop when tests pass ✅
+- Auto-generate `tatsu.yaml` if missing
+- Run your AI agent with the task
+- Validate with your test command
+- Retry up to 15 times until tests pass ✅
 
 ## Configuration
 
-Create a `tatsu.yaml` file in your project root:
+`tatsu.yaml` is auto-generated on first run. Edit it to customize:
 
 ```yaml
 agent:
-  # Command to run your AI agent
-  # %s will be replaced with the task description
-  command: 'opencode run "%s"'
-
+  command: 'opencode run "%s"'  # %s = task description
 validate:
-  # Command to check if the task is complete
-  # Should exit with code 0 on success
-  command: 'go test ./...'
+  command: 'go test ./...'      # Must exit 0 on success
 ```
 
-### Configuration Options
+**Examples:**
+- Go: `go test ./...`
+- Node: `npm test`
+- Python: `pytest`
+- Multiple: `go test ./... && go vet ./... && golangci-lint run`
 
-- **`agent.command`** - Command to execute your AI coding assistant. Use `%s` as a placeholder for the task description.
-- **`validate.command`** - Command that validates the work. Should exit with code 0 on success, non-zero on failure.
-
-### Example Configurations
-
-**Go project:**
-```yaml
-agent:
-  command: 'opencode run "%s"'
-validate:
-  command: 'go test ./...'
-```
-
-**Node.js project:**
-```yaml
-agent:
-  command: 'opencode run "%s"'
-validate:
-  command: 'npm test'
-```
-
-**Python project:**
-```yaml
-agent:
-  command: 'opencode run "%s"'
-validate:
-  command: 'pytest'
-```
-
-**Multiple validations:**
-```yaml
-agent:
-  command: 'opencode run "%s"'
-validate:
-  command: 'go test ./... && go vet ./... && golangci-lint run'
+**Regenerate config:**
+```bash
+tatsu generate --force
 ```
 
 ## Usage
 
-### Basic Usage
+### Single Task
 
 ```bash
 tatsu run "task description"
 ```
 
-### Examples
-
+**Examples:**
 ```bash
-# Add a feature
 tatsu run "implement user authentication"
-
-# Fix a bug
-tatsu run "fix the memory leak in the cache"
-
-# Add tests
-tatsu run "add tests for the API endpoints"
-
-# Refactor code
-tatsu run "refactor the parser to use a visitor pattern"
+tatsu run "fix memory leak in cache"
+tatsu run "add tests for API endpoints"
 ```
 
-### PRD (Product Requirements Document)
+### PRD (Multiple Tasks)
 
-Execute multiple tasks from a markdown file:
+Execute tasks from a markdown file:
 
 ```bash
 tatsu prd PRD.example.md
@@ -148,53 +97,40 @@ tatsu prd PRD.example.md
 - [x] setup database (already done)
 ```
 
-- `- [ ]` = incomplete task (will be executed)
-- `- [x]` = completed task (skipped)
+- `- [ ]` = incomplete (executed)
+- `- [x]` = completed (skipped)
 
-Tatsu will:
-- Load the PRD file
-- Skip completed tasks (`[x]`)
-- Execute incomplete tasks sequentially
-- Each task title becomes the prompt sent to your AI agent
+**Behavior:**
+- Executes incomplete tasks sequentially
+- Stops on first failure (after 15 retries)
+- Each task title becomes the AI agent prompt
 
-**Example PRD file:**
-```markdown
-## Tasks
-- [ ] add unit tests to parser
-- [x] setup CI (done)
-- [ ] fix memory leak
-```
-
-### Version
+### Other Commands
 
 ```bash
-tatsu version
+tatsu generate [--force]  # Generate/regenerate config
+tatsu version             # Show version
 ```
 
 ## How It Works
 
 ```
-1. Run agent with task description
-2. Run validation command
-3. If validation passes → done ✅
-4. If validation fails → retry (max 15 times)
-5. Show clear feedback at each step
+1. Run AI agent with task → 2. Validate → 3. Pass? Done ✅
+                                              ↓ No
+                                        4. Retry (max 15x)
 ```
 
-### Iteration Loop
-
-Tatsu will:
-- Show iteration count (1/15, 2/15, etc.)
-- Display agent output in real-time
-- Show validation output on failure
-- Stop immediately when validation succeeds
-- Stop after 15 iterations if still failing
+**Each iteration:**
+- Shows progress (1/15, 2/15, etc.)
+- Displays agent output in real-time
+- Shows validation errors on failure
+- Stops immediately on success
 
 ## Requirements
 
-- **AI Coding Assistant** - Currently supports [OpenCode](https://github.com/EmbeddedLLM/opencode)
-- **Validation Command** - Any command that exits 0 on success (tests, linters, etc.)
-- **Go 1.21+** - If building from source
+- [OpenCode](https://github.com/EmbeddedLLM/opencode) installed and in PATH
+- Validation command that exits 0 on success
+- Go 1.21+ (for building from source)
 
 ## Development
 
@@ -243,23 +179,12 @@ See `Makefile` for all available commands.
 ```
 tatsu/
 ├── main.go              # CLI entry point
-├── config/              # Configuration loading
-│   └── config.go
-├── harness/             # AI harness interfaces
-│   ├── harness.go
-│   └── opencode.go
-├── runner/              # Task execution engine
-│   └── runner.go
+├── config/              # Configuration management
+├── harness/             # AI harness (OpenCode)
+├── runner/              # Task execution & retry loop
+├── prd/                 # PRD parsing & execution
 └── .github/workflows/   # CI/CD
-    └── ci.yml
 ```
-
-## Limitations
-
-- Currently supports OpenCode only (more harnesses coming soon)
-- Maximum 15 iterations per task
-- Single task at a time
-- Manual configuration required (no auto-detection)
 
 ## Contributing
 
