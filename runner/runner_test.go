@@ -61,7 +61,7 @@ func TestEscapeTask(t *testing.T) {
 }
 
 func TestMaxIterations(t *testing.T) {
-	assert.Equal(t, 15, MaxIterations)
+	assert.Equal(t, 15, DefaultMaxIterations)
 }
 
 func TestRunner_IntegrationWithPassingValidation(t *testing.T) {

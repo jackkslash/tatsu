@@ -10,23 +10,34 @@ import (
 	"github.com/jack/tatsu/harness"
 )
 
-const MaxIterations = 15
+const DefaultMaxIterations = 15
 
 type Runner struct {
-	config  *config.Config
-	harness harness.Harness
+	config       *config.Config
+	harness      harness.Harness
+	maxIterations int
 }
 
 func New(cfg *config.Config, h harness.Harness) *Runner {
 	return &Runner{
-		config:  cfg,
-		harness: h,
+		config:       cfg,
+		harness:      h,
+		maxIterations: DefaultMaxIterations,
+	}
+}
+
+// NewWithMaxIterations creates a Runner with custom max iterations
+func NewWithMaxIterations(cfg *config.Config, h harness.Harness, maxIter int) *Runner {
+	return &Runner{
+		config:       cfg,
+		harness:      h,
+		maxIterations: maxIter,
 	}
 }
 
 func (r *Runner) Run(task string) error {
-	for i := 1; i <= MaxIterations; i++ {
-		fmt.Printf("🔁 Iteration %d/%d\n", i, MaxIterations)
+	for i := 1; i <= r.maxIterations; i++ {
+		fmt.Printf("🔁 Iteration %d/%d\n", i, r.maxIterations)
 
 		// Run agent
 		if err := r.runAgent(task); err != nil {

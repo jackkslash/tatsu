@@ -72,13 +72,14 @@ tatsu generate --force
 
 ```bash
 tatsu run "task description"
+tatsu run -max-iterations 5 "task description"  # Custom retry limit
 ```
 
 **Examples:**
 ```bash
 tatsu run "implement user authentication"
 tatsu run "fix memory leak in cache"
-tatsu run "add tests for API endpoints"
+tatsu run -max-iterations 10 "add tests for API endpoints"
 ```
 
 ### PRD (Multiple Tasks)
@@ -87,6 +88,7 @@ Execute tasks from a markdown file:
 
 ```bash
 tatsu prd PRD.example.md
+tatsu prd -max-iterations 10 PRD.example.md  # Custom retry limit
 ```
 
 **PRD Format:**
@@ -102,8 +104,14 @@ tatsu prd PRD.example.md
 
 **Behavior:**
 - Executes incomplete tasks sequentially
-- Stops on first failure (after 15 retries)
+- Stops on first failure (after max iterations)
 - Each task title becomes the AI agent prompt
+
+### Flags
+
+- `-max-iterations N` - Maximum retry iterations per task (default: 15)
+  - Applies to both `run` and `prd` commands
+  - Example: `tatsu run -max-iterations 5 "task"`
 
 ### Other Commands
 
@@ -117,7 +125,7 @@ tatsu version             # Show version
 ```
 1. Run AI agent with task → 2. Validate → 3. Pass? Done ✅
                                               ↓ No
-                                        4. Retry (max 15x)
+                                        4. Retry (default: max 15x)
 ```
 
 **Each iteration:**
@@ -125,6 +133,7 @@ tatsu version             # Show version
 - Displays agent output in real-time
 - Shows validation errors on failure
 - Stops immediately on success
+- Customizable max iterations via `-max-iterations` flag
 
 ## Requirements
 

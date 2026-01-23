@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -12,28 +13,47 @@ import (
 
 const Version = "0.1.0"
 
+const (
+	maxIterationsLimit = 100 // Maximum allowed iterations for safety
+)
+
 func main() {
-	// Parse args
-	if len(os.Args) < 2 {
+	// Parse flags
+	maxIterFlag := flag.Int("max-iterations", runner.DefaultMaxIterations, "Maximum number of retry iterations")
+	flag.Parse()
+
+	// Validate max iterations
+	if *maxIterFlag < 1 {
+		fmt.Printf("❌ Error: max-iterations must be at least 1\n")
+		os.Exit(1)
+	}
+	if *maxIterFlag > maxIterationsLimit {
+		fmt.Printf("❌ Error: max-iterations cannot exceed %d (got %d)\n", maxIterationsLimit, *maxIterFlag)
+		os.Exit(1)
+	}
+
+	// Get remaining args after flag parsing
+	args := flag.Args()
+	if len(args) < 1 {
 		printUsage()
 		os.Exit(1)
 	}
 
-	command := os.Args[1]
+	command := args[0]
 
 	switch command {
 	case "run":
-		if len(os.Args) < 3 {
+		if len(args) < 2 {
 			fmt.Println("❌ Error: task description required")
 			printUsage()
 			os.Exit(1)
 		}
-		task := os.Args[2]
-		runTask(task)
+		task := args[1]
+		runTask(task, *maxIterFlag)
 	case "generate", "gen":
 		force := false
-		if len(os.Args) > 2 {
-			for _, arg := range os.Args[2:] {
+		if len(args) > 1 {
+			for _, arg := range args[1:] {
 				if arg == "--force" || arg == "-f" {
 					force = true
 					break
@@ -42,13 +62,13 @@ func main() {
 		}
 		generateConfig(force)
 	case "prd":
-		if len(os.Args) < 3 {
+		if len(args) < 2 {
 			fmt.Println("❌ Error: PRD file required")
 			printUsage()
 			os.Exit(1)
 		}
-		prdFile := os.Args[2]
-		runPRD(prdFile)
+		prdFile := args[1]
+		runPRD(prdFile, *maxIterFlag)
 	case "version", "--version", "-v":
 		fmt.Printf("tatsu v%s\n", Version)
 	default:
@@ -58,7 +78,7 @@ func main() {
 	}
 }
 
-func runTask(task string) {
+func runTask(task string, maxIter int) {
 	fmt.Printf("🎯 Task: %s\n\n", task)
 
 	// Check if config exists, generate if not
@@ -81,7 +101,11 @@ func runTask(task string) {
 
 	fmt.Println("✅ Configuration loaded successfully")
 	fmt.Printf("   Agent: %s\n", cfg.Agent.Command)
-	fmt.Printf("   Validate: %s\n\n", cfg.Validate.Command)
+	fmt.Printf("   Validate: %s\n", cfg.Validate.Command)
+	if maxIter != runner.DefaultMaxIterations {
+		fmt.Printf("   Max iterations: %d\n", maxIter)
+	}
+	fmt.Println()
 
 	// Check harness availability
 	h := harness.NewOpenCodeHarness()
@@ -94,7 +118,7 @@ func runTask(task string) {
 	fmt.Printf("✅ %s is available\n\n", h.Name())
 
 	// Run task with runner
-	r := runner.New(cfg, h)
+	r := runner.NewWithMaxIterations(cfg, h, maxIter)
 	if err := r.Run(task); err != nil {
 		fmt.Printf("⚠️  %v\n", err)
 		os.Exit(1)
@@ -119,7 +143,7 @@ func generateConfig(force bool) {
 	fmt.Println("   - validate.command: Your test/validation command")
 }
 
-func runPRD(prdFile string) {
+func runPRD(prdFile string, maxIter int) {
 	fmt.Printf("📄 Loading PRD: %s\n\n", prdFile)
 
 	// Check if config exists, generate if not
@@ -156,7 +180,7 @@ func runPRD(prdFile string) {
 	}
 
 	// Execute PRD
-	r := runner.New(cfg, h)
+	r := runner.NewWithMaxIterations(cfg, h, maxIter)
 	executor := prd.NewExecutor(r)
 	if err := executor.ExecutePRD(prdDoc); err != nil {
 		fmt.Printf("⚠️  %v\n", err)
@@ -171,9 +195,13 @@ func printUsage() {
 	fmt.Println("  tatsu prd <file>                Execute tasks from PRD file")
 	fmt.Println("  tatsu generate [--force]       Generate tatsu.yaml")
 	fmt.Println("  tatsu version                  Show version")
+	fmt.Println("\nFlags:")
+	fmt.Printf("  -max-iterations N              Maximum retry iterations (default: %d, max: %d)\n", runner.DefaultMaxIterations, maxIterationsLimit)
 	fmt.Println("\nExamples:")
 	fmt.Println("  tatsu run \"add unit tests to the parser\"")
+	fmt.Println("  tatsu run -max-iterations 5 \"quick test\"")
 	fmt.Println("  tatsu prd PRD.example.md")
+	fmt.Println("  tatsu prd -max-iterations 10 PRD.example.md")
 	fmt.Println("  tatsu generate")
 	fmt.Println("  tatsu generate --force")
 	fmt.Println("\nNote: tatsu.yaml will be auto-generated on first run if it doesn't exist")
