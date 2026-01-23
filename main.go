@@ -6,6 +6,7 @@ import (
 
 	"github.com/jack/tatsu/config"
 	"github.com/jack/tatsu/harness"
+	"github.com/jack/tatsu/prd"
 	"github.com/jack/tatsu/runner"
 )
 
@@ -40,6 +41,14 @@ func main() {
 			}
 		}
 		generateConfig(force)
+	case "prd":
+		if len(os.Args) < 3 {
+			fmt.Println("❌ Error: PRD file required")
+			printUsage()
+			os.Exit(1)
+		}
+		prdFile := os.Args[2]
+		runPRD(prdFile)
 	case "version", "--version", "-v":
 		fmt.Printf("tatsu v%s\n", Version)
 	default:
@@ -110,14 +119,61 @@ func generateConfig(force bool) {
 	fmt.Println("   - validate.command: Your test/validation command")
 }
 
+func runPRD(prdFile string) {
+	fmt.Printf("📄 Loading PRD: %s\n\n", prdFile)
+
+	// Check if config exists, generate if not
+	if _, err := os.Stat("tatsu.yaml"); os.IsNotExist(err) {
+		fmt.Println("📝 No tatsu.yaml found. Generating configuration...")
+		if err := config.Generate(false); err != nil {
+			fmt.Printf("❌ Failed to generate config: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("✅ Created tatsu.yaml")
+		fmt.Println("   (Run 'tatsu generate --force' to regenerate)")
+	}
+
+	// Load config
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Printf("❌ %v\n", err)
+		os.Exit(1)
+	}
+
+	// Check harness availability
+	h := harness.NewOpenCodeHarness()
+	if !h.IsAvailable() {
+		fmt.Printf("❌ %s is not installed or not in PATH\n", h.Name())
+		fmt.Println("   Install from: https://github.com/EmbeddedLLM/opencode")
+		os.Exit(1)
+	}
+
+	// Load PRD
+	prdDoc, err := prd.LoadPRD(prdFile)
+	if err != nil {
+		fmt.Printf("❌ Failed to load PRD: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Execute PRD
+	r := runner.New(cfg, h)
+	executor := prd.NewExecutor(r)
+	if err := executor.ExecutePRD(prdDoc); err != nil {
+		fmt.Printf("⚠️  %v\n", err)
+		os.Exit(1)
+	}
+}
+
 func printUsage() {
 	fmt.Println("tatsu v" + Version)
 	fmt.Println("\nUsage:")
 	fmt.Println("  tatsu run \"task description\"  Run a task")
+	fmt.Println("  tatsu prd <file>                Execute tasks from PRD file")
 	fmt.Println("  tatsu generate [--force]       Generate tatsu.yaml")
 	fmt.Println("  tatsu version                  Show version")
 	fmt.Println("\nExamples:")
 	fmt.Println("  tatsu run \"add unit tests to the parser\"")
+	fmt.Println("  tatsu prd PRD.example.md")
 	fmt.Println("  tatsu generate")
 	fmt.Println("  tatsu generate --force")
 	fmt.Println("\nNote: tatsu.yaml will be auto-generated on first run if it doesn't exist")

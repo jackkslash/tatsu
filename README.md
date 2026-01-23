@@ -132,6 +132,39 @@ tatsu run "add tests for the API endpoints"
 tatsu run "refactor the parser to use a visitor pattern"
 ```
 
+### PRD (Product Requirements Document)
+
+Execute multiple tasks from a markdown file:
+
+```bash
+tatsu prd PRD.example.md
+```
+
+**PRD Format:**
+```markdown
+## Tasks
+- [ ] create authentication system
+- [ ] add user dashboard
+- [x] setup database (already done)
+```
+
+- `- [ ]` = incomplete task (will be executed)
+- `- [x]` = completed task (skipped)
+
+Tatsu will:
+- Load the PRD file
+- Skip completed tasks (`[x]`)
+- Execute incomplete tasks sequentially
+- Each task title becomes the prompt sent to your AI agent
+
+**Example PRD file:**
+```markdown
+## Tasks
+- [ ] add unit tests to parser
+- [x] setup CI (done)
+- [ ] fix memory leak
+```
+
 ### Version
 
 ```bash
