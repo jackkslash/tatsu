@@ -32,7 +32,15 @@ Make sure `$GOPATH/bin` is in your `PATH`.
 
 ## Quick Start
 
-**Run a task** (config auto-generates on first run):
+**Option 1: TUI** (run with no arguments):
+
+```bash
+tatsu
+```
+
+Launches the terminal UI. Choose Task or PRD mode, enter your task or PRD path, press Enter to run. Live output and validation results appear in the TUI; when done, press `r` or Enter to run again, or `q` to quit.
+
+**Option 2: CLI** (config auto-generates on first run):
 
 ```bash
 tatsu run "add unit tests to the parser"
@@ -68,7 +76,21 @@ tatsu generate --force
 
 ## Usage
 
-### Single Task
+### TUI (Interactive)
+
+Run `tatsu` with no arguments to start the TUI:
+
+```bash
+tatsu
+```
+
+- **Tab** or **←/→** – Switch between **Task** mode and **PRD** mode
+- **Task mode** – Type a task description and press **Enter** to run
+- **PRD mode** – Input defaults to `prd.md` (editable); press **Enter** to run
+- During a run – Live iteration count, agent output, and validation results
+- After a run – Scroll with **↑/↓** or **j/k**; **r** or **Enter** to run again; **q** or **Ctrl+C** to quit
+
+### Single Task (CLI)
 
 ```bash
 tatsu run "task description"
@@ -141,6 +163,8 @@ tatsu version             # Show version
 - Validation command that exits 0 on success
 - Go 1.21+ (for building from source)
 
+When Tatsu runs the agent, it sets `OPENCODE_CONFIG_CONTENT` (permission allow), `CI=true`, and `TERM=dumb` so OpenCode runs non-interactively without approval prompts.
+
 ## Development
 
 ### Building
@@ -187,11 +211,12 @@ See `Makefile` for all available commands.
 
 ```
 tatsu/
-├── main.go              # CLI entry point
+├── main.go              # CLI entry point (TUI when no args, else CLI)
 ├── config/              # Configuration management
-├── harness/             # AI harness (OpenCode)
-├── runner/              # Task execution & retry loop
+├── harness/             # AI harness (OpenCode, allow-env for non-interactive)
+├── runner/              # Task execution & retry loop (CLI)
 ├── prd/                 # PRD parsing & execution
+├── tui/                 # Terminal UI (Bubbletea)
 └── .github/workflows/   # CI/CD
 ```
 
