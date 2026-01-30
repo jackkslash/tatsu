@@ -9,6 +9,7 @@ import (
 	"github.com/jack/tatsu/harness"
 	"github.com/jack/tatsu/prd"
 	"github.com/jack/tatsu/runner"
+	"github.com/jack/tatsu/tui"
 )
 
 const Version = "0.1.0"
@@ -20,7 +21,16 @@ const (
 func main() {
 	// Parse flags
 	maxIterFlag := flag.Int("max-iterations", runner.DefaultMaxIterations, "Maximum number of retry iterations")
+	dirFlag := flag.String("C", "", "Run in directory (load tatsu.yaml and run commands there)")
 	flag.Parse()
+
+	// Change to target directory if set
+	if *dirFlag != "" {
+		if err := os.Chdir(*dirFlag); err != nil {
+			fmt.Printf("❌ Error: %v\n", err)
+			os.Exit(1)
+		}
+	}
 
 	// Validate max iterations
 	if *maxIterFlag < 1 {
@@ -34,9 +44,32 @@ func main() {
 
 	// Get remaining args after flag parsing
 	args := flag.Args()
+
+	// No args: open TUI (everything runs inside TUI; q to quit)
 	if len(args) < 1 {
-		printUsage()
-		os.Exit(1)
+		if _, err := os.Stat("tatsu.yaml"); os.IsNotExist(err) {
+			fmt.Println("📝 No tatsu.yaml found. Generating configuration...")
+			if err := config.Generate(false); err != nil {
+				fmt.Printf("❌ Failed to generate config: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Println("✅ Created tatsu.yaml")
+		}
+		cfg, err := config.Load()
+		if err != nil {
+			fmt.Printf("❌ %v\n", err)
+			os.Exit(1)
+		}
+		h := harness.NewOpenCodeHarness()
+		if !h.IsAvailable() {
+			fmt.Printf("❌ %s is not installed or not in PATH\n", h.Name())
+			os.Exit(1)
+		}
+		if err := tui.Run(cfg, h, *maxIterFlag); err != nil {
+			fmt.Fprintf(os.Stderr, "TUI error: %v\n", err)
+			os.Exit(1)
+		}
+		return
 	}
 
 	command := args[0]
@@ -191,6 +224,7 @@ func runPRD(prdFile string, maxIter int) {
 func printUsage() {
 	fmt.Println("tatsu v" + Version)
 	fmt.Println("\nUsage:")
+	fmt.Println("  tatsu                          Open TUI (Tab to switch Task / PRD)")
 	fmt.Println("  tatsu run \"task description\"  Run a task")
 	fmt.Println("  tatsu prd <file>                Execute tasks from PRD file")
 	fmt.Println("  tatsu generate [--force]       Generate tatsu.yaml")
