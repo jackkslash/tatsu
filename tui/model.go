@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"strings"
+	"time"
 	"unicode"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -59,6 +60,9 @@ type prdTaskStartMsg struct {
 	total   int
 	title   string
 }
+
+// iterationTickMsg forces a repaint after iteration update (so UI shows new count)
+type iterationTickMsg struct{}
 
 var (
 	titleStyle = lipgloss.NewStyle().
@@ -155,6 +159,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.status = "running agent"
 		m.agentOutput = nil
 		m.agentError = ""
+		// Force repaint so iteration count is visible
+		return m, tea.Tick(time.Millisecond, func(time.Time) tea.Msg { return iterationTickMsg{} })
+
+	case iterationTickMsg:
 		return m, nil
 
 	case agentOutputMsg:
@@ -238,13 +246,18 @@ func (m *model) handleInputKey(s string) (tea.Model, tea.Cmd) {
 	case "tab", "left", "right":
 		if m.mode == ModeTask {
 			m.mode = ModePRD
+			m.input = "prd.md"
 		} else {
 			m.mode = ModeTask
+			m.input = ""
 		}
 		return m, nil
 
 	case "enter":
 		in := strings.TrimSpace(m.input)
+		if m.mode == ModePRD && in == "" {
+			in = "prd.md"
+		}
 		if in == "" {
 			return m, nil
 		}
@@ -309,6 +322,7 @@ func (m *model) viewInput() string {
 		sections = append(sections, labelStyle.Render("Task description:"))
 	} else {
 		sections = append(sections, labelStyle.Render("PRD file path:"))
+		sections = append(sections, helpStyle.Render("Default: prd.md"))
 	}
 	sections = append(sections, helpStyle.Render("Tab to switch mode"))
 	sections = append(sections, "")
@@ -327,7 +341,8 @@ func (m *model) viewRunning() string {
 		sections = append(sections, labelStyle.Render(fmt.Sprintf("PRD task %d/%d: %s", m.prdCurrent, m.prdTotal, m.prdTitle)))
 		sections = append(sections, "")
 	}
-	sections = append(sections, labelStyle.Render(fmt.Sprintf("🔁 Iteration %d/%d • %s", m.currentIter, m.maxIterations, m.status)))
+	iterLine := fmt.Sprintf("🔁 Iteration %d/%d • %s", m.currentIter, m.maxIterations, m.status)
+	sections = append(sections, titleStyle.Render(iterLine))
 	sections = append(sections, "")
 	if m.agentError != "" {
 		sections = append(sections, errorStyle.Render("Agent error: "+m.agentError))
@@ -364,7 +379,8 @@ func (m *model) viewDone() string {
 		sections = append(sections, labelStyle.Render(fmt.Sprintf("PRD task %d/%d: %s", m.prdCurrent, m.prdTotal, m.prdTitle)))
 		sections = append(sections, "")
 	}
-	sections = append(sections, labelStyle.Render(fmt.Sprintf("🔁 Iteration %d/%d • %s", m.currentIter, m.maxIterations, m.status)))
+	iterLine := fmt.Sprintf("🔁 Iteration %d/%d • %s", m.currentIter, m.maxIterations, m.status)
+	sections = append(sections, titleStyle.Render(iterLine))
 	sections = append(sections, "")
 	if m.agentError != "" {
 		sections = append(sections, errorStyle.Render("Agent error: "+m.agentError))
