@@ -15,7 +15,7 @@ import (
 
 // RunTaskInTUI runs a single task and sends progress messages to the TUI.
 // send is program.Send; call from a goroutine.
-func RunTaskInTUI(send func(tea.Msg), cfg *config.Config, h harness.Harness, maxIter int, task string) {
+func RunTaskInTUI(send func(tea.Msg), cfg *config.Config, maxIter int, task string) {
 	for i := 1; i <= maxIter; i++ {
 		send(iterationStartMsg{iter: i, maxIter: maxIter})
 
@@ -38,7 +38,7 @@ func RunTaskInTUI(send func(tea.Msg), cfg *config.Config, h harness.Harness, max
 }
 
 // RunPRDInTUI runs a PRD file and sends progress messages to the TUI.
-func RunPRDInTUI(send func(tea.Msg), cfg *config.Config, h harness.Harness, maxIter int, prdPath string) {
+func RunPRDInTUI(send func(tea.Msg), cfg *config.Config, maxIter int, prdPath string) {
 	doc, err := prd.LoadPRD(prdPath)
 	if err != nil {
 		send(runCompleteMsg{success: false, errMsg: err.Error()})
@@ -79,7 +79,6 @@ func runTaskLoop(send func(tea.Msg), cfg *config.Config, maxIter int, task strin
 func runAgentCapture(send func(tea.Msg), cfg *config.Config, task string) error {
 	cmdStr := fmt.Sprintf(cfg.Agent.Command, escapeTask(task))
 	c := exec.Command("bash", "-c", cmdStr)
-	c.Stdin = nil
 	c.Env = harness.AgentEnv()
 	stdout, _ := c.StdoutPipe()
 	stderr, _ := c.StderrPipe()
@@ -108,7 +107,7 @@ func runValidate(cfg *config.Config) (bool, string) {
 	}
 	return true, s
 }
-
 func escapeTask(task string) string {
 	return strings.ReplaceAll(task, `"`, `\"`)
 }
+

@@ -65,7 +65,7 @@ func main() {
 			fmt.Printf("❌ %s is not installed or not in PATH\n", h.Name())
 			os.Exit(1)
 		}
-		if err := tui.Run(cfg, h, *maxIterFlag); err != nil {
+		if err := tui.Run(cfg, *maxIterFlag); err != nil {
 			fmt.Fprintf(os.Stderr, "TUI error: %v\n", err)
 			os.Exit(1)
 		}

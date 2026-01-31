@@ -10,7 +10,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/jack/tatsu/config"
-	"github.com/jack/tatsu/harness"
 )
 
 // Mode is either "task" or "prd"
@@ -101,9 +100,8 @@ type model struct {
 	state  appState
 
 	// run context (set when starting run)
-	cfg        *config.Config
-	harness    harness.Harness
-	maxIter    int
+	cfg    *config.Config
+	maxIter int
 	send       func(tea.Msg)
 	runMode    Mode
 	runInput   string
@@ -126,15 +124,14 @@ type model struct {
 }
 
 // NewModel creates a TUI model. send is program.Send; set before Run().
-func NewModel(cfg *config.Config, h harness.Harness, maxIter int) *model {
+func NewModel(cfg *config.Config, maxIter int) *model {
 	return &model{
-		mode:         ModeTask,
-		input:        "",
-		state:        stateInput,
-		cfg:          cfg,
-		harness:      h,
-		maxIter:      maxIter,
-		agentOutput:  make([]string, 0),
+		mode:        ModeTask,
+		input:       "",
+		state:       stateInput,
+		cfg:         cfg,
+		maxIter:     maxIter,
+		agentOutput: make([]string, 0),
 	}
 }
 
@@ -271,9 +268,9 @@ func (m *model) handleInputKey(s string) (tea.Model, tea.Cmd) {
 		m.agentError = ""
 		m.status = "starting..."
 		if m.runMode == ModeTask {
-			go RunTaskInTUI(m.send, m.cfg, m.harness, m.maxIter, in)
+			go RunTaskInTUI(m.send, m.cfg, m.maxIter, in)
 		} else {
-			go RunPRDInTUI(m.send, m.cfg, m.harness, m.maxIter, in)
+			go RunPRDInTUI(m.send, m.cfg, m.maxIter, in)
 		}
 		return m, nil
 
@@ -435,9 +432,9 @@ func (m *model) viewDone() string {
 	return lipgloss.Place(m.width, m.height, lipgloss.Left, lipgloss.Top, content)
 }
 
-// Run starts the TUI. Config and harness must be loaded; execution happens inside the TUI.
-func Run(cfg *config.Config, h harness.Harness, maxIter int) error {
-	m := NewModel(cfg, h, maxIter)
+// Run starts the TUI. Config must be loaded; execution happens inside the TUI.
+func Run(cfg *config.Config, maxIter int) error {
+	m := NewModel(cfg, maxIter)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	m.setSend(p.Send)
 	_, err := p.Run()
