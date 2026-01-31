@@ -163,7 +163,7 @@ tatsu version             # Show version
 - Validation command that exits 0 on success
 - Go 1.21+ (for building from source)
 
-When Tatsu runs the agent, it sets `OPENCODE_CONFIG_CONTENT` (permission allow), `CI=true`, and `TERM=dumb` so OpenCode runs non-interactively without approval prompts.
+When Tatsu runs the agent, it sets `OPENCODE_CONFIG_CONTENT` (permission allow) and `CI=true` so OpenCode runs non-interactively without approval prompts.
 
 ## Development
 

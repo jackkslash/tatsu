@@ -79,6 +79,8 @@ func runTaskLoop(send func(tea.Msg), cfg *config.Config, maxIter int, task strin
 func runAgentCapture(send func(tea.Msg), cfg *config.Config, task string) error {
 	cmdStr := fmt.Sprintf(cfg.Agent.Command, escapeTask(task))
 	c := exec.Command("bash", "-c", cmdStr)
+	c.Stdin = nil
+	c.Env = harness.AgentEnv()
 	stdout, _ := c.StdoutPipe()
 	stderr, _ := c.StderrPipe()
 	if err := c.Start(); err != nil {

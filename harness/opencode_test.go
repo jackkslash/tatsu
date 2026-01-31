@@ -1,6 +1,7 @@
 package harness
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -34,4 +35,20 @@ func TestOpenCodeHarness_IsAvailable(t *testing.T) {
 
 func TestOpenCodeHarness_ImplementsInterface(t *testing.T) {
 	var _ Harness = (*OpenCodeHarness)(nil)
+}
+
+func TestAgentEnv(t *testing.T) {
+	env := AgentEnv()
+	hasConfig := false
+	hasCI := false
+	for _, e := range env {
+		if strings.HasPrefix(e, "OPENCODE_CONFIG_CONTENT=") && strings.Contains(e, `"permission"`) {
+			hasConfig = true
+		}
+		if e == "CI=true" {
+			hasCI = true
+		}
+	}
+	assert.True(t, hasConfig, "AgentEnv should set OPENCODE_CONFIG_CONTENT with permission")
+	assert.True(t, hasCI, "AgentEnv should set CI=true")
 }

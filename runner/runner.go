@@ -61,10 +61,12 @@ func (r *Runner) runAgent(task string) error {
 	// Format command with task
 	cmd := fmt.Sprintf(r.config.Agent.Command, escapeTask(task))
 
-	// Execute
+	// Execute with non-interactive env (permission allow, CI)
 	c := exec.Command("bash", "-c", cmd)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
+	c.Stdin = nil // /dev/null - prevent blocking on stdin
+	c.Env = harness.AgentEnv()
 
 	return c.Run()
 }
