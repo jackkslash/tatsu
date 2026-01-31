@@ -1,12 +1,31 @@
 package runner
 
 import (
+	"os"
 	"testing"
 
 	"github.com/jack/tatsu/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// quietTest redirects stdout/stderr to /dev/null for the test
+func quietTest(t *testing.T, fn func()) {
+	oldStdout := os.Stdout
+	oldStderr := os.Stderr
+	devNull, err := os.Open("/dev/null")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer devNull.Close()
+	os.Stdout = devNull
+	os.Stderr = devNull
+	defer func() {
+		os.Stdout = oldStdout
+		os.Stderr = oldStderr
+	}()
+	fn()
+}
 
 type mockHarness struct{}
 
@@ -85,7 +104,10 @@ func TestRunner_UsesCustomMaxIterations(t *testing.T) {
 	r := NewWithMaxIterations(cfg, h, 3) // Only 3 iterations
 
 	// Should fail after 3 iterations, not 15
-	err := r.Run("test task")
+	var err error
+	quietTest(t, func() {
+		err = r.Run("test task")
+	})
 	require.Error(t, err)
 	assert.Equal(t, "max iterations reached", err.Error())
 
@@ -103,7 +125,10 @@ func TestRunner_IntegrationWithPassingValidation(t *testing.T) {
 	r := New(cfg, h)
 
 	// Run with passing validation - should succeed on first iteration
-	err := r.Run("test task")
+	var err error
+	quietTest(t, func() {
+		err = r.Run("test task")
+	})
 	assert.NoError(t, err)
 }
 
@@ -117,7 +142,10 @@ func TestRunner_IntegrationWithFailingValidation(t *testing.T) {
 	r := New(cfg, h)
 
 	// Run with failing validation - should hit max iterations
-	err := r.Run("test task")
+	var err error
+	quietTest(t, func() {
+		err = r.Run("test task")
+	})
 	require.Error(t, err)
 	assert.Equal(t, "max iterations reached", err.Error())
 }
