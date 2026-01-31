@@ -39,7 +39,7 @@ func TestExecutePRD_AllCompleted(t *testing.T) {
 		},
 	}
 
-	err := executor.ExecutePRD(prd)
+	err := executor.ExecutePRD(prd, "")
 	require.NoError(t, err)
 }
 
@@ -59,7 +59,7 @@ func TestExecutePRD_ExecuteIncompleteTasks(t *testing.T) {
 		},
 	}
 
-	err := executor.ExecutePRD(prd)
+	err := executor.ExecutePRD(prd, "")
 	require.NoError(t, err)
 }
 
@@ -81,7 +81,7 @@ func TestExecutePRD_SkipsCompletedTasks(t *testing.T) {
 	}
 
 	// Should only execute task 2 and task 4
-	err := executor.ExecutePRD(prd)
+	err := executor.ExecutePRD(prd, "")
 	require.NoError(t, err)
 }
 
@@ -100,7 +100,7 @@ func TestExecutePRD_TaskFailure(t *testing.T) {
 	}
 
 	// Should return error after max iterations
-	err := executor.ExecutePRD(prd)
+	err := executor.ExecutePRD(prd, "")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failing task")
 	assert.Contains(t, err.Error(), "failed")

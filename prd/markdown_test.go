@@ -1,6 +1,8 @@
 package prd
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -116,4 +118,41 @@ Some other content here.
 	assert.Equal(t, 3, prd.TotalCount())
 	// Should only extract task list items, ignoring other content
 	assert.Equal(t, "first task", prd.Tasks[0].Title)
+}
+
+func TestMarkTaskCompleteInFile(t *testing.T) {
+	dir := t.TempDir()
+	filename := filepath.Join(dir, "prd.md")
+	content := `# PRD
+
+- [ ] first task
+- [ ] second task
+- [x] already done
+`
+	require.NoError(t, os.WriteFile(filename, []byte(content), 0644))
+
+	// Line 3 = "- [ ] first task"
+	err := MarkTaskCompleteInFile(filename, 3)
+	require.NoError(t, err)
+
+	data, err := os.ReadFile(filename)
+	require.NoError(t, err)
+	assert.Contains(t, string(data), "- [x] first task")
+	assert.Contains(t, string(data), "- [ ] second task")
+	assert.Contains(t, string(data), "- [x] already done")
+
+	// Line 4 = "second task"
+	err = MarkTaskCompleteInFile(filename, 4)
+	require.NoError(t, err)
+	data, err = os.ReadFile(filename)
+	require.NoError(t, err)
+	assert.Contains(t, string(data), "- [x] second task")
+
+	// Line 5 = "already done" - no change (already [x])
+	err = MarkTaskCompleteInFile(filename, 5)
+	require.NoError(t, err)
+
+	// Out of range: no error, no change
+	err = MarkTaskCompleteInFile(filename, 99)
+	require.NoError(t, err)
 }

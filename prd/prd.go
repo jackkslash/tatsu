@@ -6,6 +6,7 @@ import "fmt"
 type Task struct {
 	Title     string
 	Completed bool
+	LineNum   int // 1-based line number in file (0 if unknown)
 }
 
 // PRD represents a Product Requirements Document containing tasks

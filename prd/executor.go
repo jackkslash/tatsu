@@ -18,8 +18,9 @@ func NewExecutor(r *runner.Runner) *Executor {
 	}
 }
 
-// ExecutePRD executes all incomplete tasks from a PRD sequentially
-func (e *Executor) ExecutePRD(prd *PRD) error {
+// ExecutePRD executes all incomplete tasks from a PRD sequentially.
+// If filename is non-empty, the PRD file is updated to mark each task complete as it succeeds.
+func (e *Executor) ExecutePRD(prd *PRD, filename string) error {
 	incomplete := prd.IncompleteTasks()
 
 	if len(incomplete) == 0 {
@@ -39,6 +40,13 @@ func (e *Executor) ExecutePRD(prd *PRD) error {
 		// Execute task using runner
 		if err := e.runner.Run(task.Title); err != nil {
 			return fmt.Errorf("task '%s' failed: %w", task.Title, err)
+		}
+
+		// Mark task complete in PRD file
+		if filename != "" && task.LineNum > 0 {
+			if err := MarkTaskCompleteInFile(filename, task.LineNum); err != nil {
+				fmt.Printf("⚠️  Failed to update PRD file: %v\n", err)
+			}
 		}
 
 		fmt.Println()

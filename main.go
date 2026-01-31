@@ -215,7 +215,7 @@ func runPRD(prdFile string, maxIter int) {
 	// Execute PRD
 	r := runner.NewWithMaxIterations(cfg, h, maxIter)
 	executor := prd.NewExecutor(r)
-	if err := executor.ExecutePRD(prdDoc); err != nil {
+	if err := executor.ExecutePRD(prdDoc, prdFile); err != nil {
 		fmt.Printf("⚠️  %v\n", err)
 		os.Exit(1)
 	}

@@ -1,8 +1,15 @@
 package prd
 
 import (
+	"fmt"
+	"os"
 	"regexp"
 	"strings"
+)
+
+const (
+	checkboxIncomplete = " [ ] "
+	checkboxComplete   = " [x] "
 )
 
 var (
@@ -15,7 +22,7 @@ func ParseMarkdown(content string) (*PRD, error) {
 	lines := strings.Split(content, "\n")
 	var tasks []Task
 
-	for _, line := range lines {
+	for i, line := range lines {
 		matches := taskListItemRegex.FindStringSubmatch(line)
 		if matches == nil {
 			continue
@@ -37,6 +44,7 @@ func ParseMarkdown(content string) (*PRD, error) {
 		tasks = append(tasks, Task{
 			Title:     title,
 			Completed: completed,
+			LineNum:   i + 1,
 		})
 	}
 
@@ -62,4 +70,21 @@ type ParseError struct {
 
 func (e *ParseError) Error() string {
 	return e.Message
+}
+
+// MarkTaskCompleteInFile marks a task as complete in the PRD file by changing [ ] to [x].
+// lineNum is 1-based (same as editors).
+func MarkTaskCompleteInFile(filename string, lineNum int) error {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return fmt.Errorf("read PRD file: %w", err)
+	}
+	lines := strings.Split(string(data), "\n")
+	lineIndex := lineNum - 1
+
+	if lineIndex >= 0 && lineIndex < len(lines) {
+		lines[lineIndex] = strings.Replace(lines[lineIndex], checkboxIncomplete, checkboxComplete, 1)
+		return os.WriteFile(filename, []byte(strings.Join(lines, "\n")), 0644)
+	}
+	return nil
 }

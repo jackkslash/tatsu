@@ -56,6 +56,12 @@ func RunPRDInTUI(send func(tea.Msg), cfg *config.Config, maxIter int, prdPath st
 			send(runCompleteMsg{success: false, errMsg: err.Error()})
 			return
 		}
+		// Mark task complete in PRD file
+		if task.LineNum > 0 {
+			if err := prd.MarkTaskCompleteInFile(prdPath, task.LineNum); err != nil {
+				_ = err // log but don't fail - task completed successfully
+			}
+		}
 	}
 	send(runCompleteMsg{success: true})
 }
