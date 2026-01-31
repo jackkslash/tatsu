@@ -100,8 +100,8 @@ type model struct {
 	state  appState
 
 	// run context (set when starting run)
-	cfg    *config.Config
-	maxIter int
+	cfg        *config.Config
+	maxIter    int
 	send       func(tea.Msg)
 	runMode    Mode
 	runInput   string
@@ -110,16 +110,16 @@ type model struct {
 	prdTitle   string
 
 	// running state
-	currentIter     int
-	maxIterations   int
-	agentOutput     []string
+	currentIter      int
+	maxIterations    int
+	agentOutput      []string
 	validationOutput string
-	agentError     string
-	status         string
+	agentError       string
+	status           string
 
 	// done state
-	runSuccess bool
-	runErr     string
+	runSuccess   bool
+	runErr       string
 	scrollOffset int // for scrolling through output
 }
 

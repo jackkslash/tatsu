@@ -107,4 +107,3 @@ func runValidate(cfg *config.Config) (bool, string) {
 	}
 	return true, s
 }
-

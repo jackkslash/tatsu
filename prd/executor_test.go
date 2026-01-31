@@ -11,8 +11,8 @@ import (
 
 type mockHarness struct{}
 
-func (m *mockHarness) Name() string        { return "MockHarness" }
-func (m *mockHarness) IsAvailable() bool   { return true }
+func (m *mockHarness) Name() string      { return "MockHarness" }
+func (m *mockHarness) IsAvailable() bool { return true }
 
 func TestNewExecutor(t *testing.T) {
 	cfg := &config.Config{}

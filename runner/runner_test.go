@@ -10,15 +10,15 @@ import (
 
 type mockHarness struct{}
 
-func (m *mockHarness) Name() string        { return "MockHarness" }
-func (m *mockHarness) IsAvailable() bool   { return true }
+func (m *mockHarness) Name() string      { return "MockHarness" }
+func (m *mockHarness) IsAvailable() bool { return true }
 
 func TestNew(t *testing.T) {
 	cfg := &config.Config{}
 	h := &mockHarness{}
-	
+
 	r := New(cfg, h)
-	
+
 	require.NotNil(t, r)
 	assert.Equal(t, cfg, r.config)
 	assert.Equal(t, h, r.harness)
@@ -68,7 +68,7 @@ func TestDefaultMaxIterations(t *testing.T) {
 func TestNewWithMaxIterations(t *testing.T) {
 	cfg := &config.Config{}
 	h := &mockHarness{}
-	
+
 	r := NewWithMaxIterations(cfg, h, 5)
 	require.NotNil(t, r)
 	assert.Equal(t, 5, r.maxIterations)
@@ -80,15 +80,15 @@ func TestRunner_UsesCustomMaxIterations(t *testing.T) {
 	cfg := &config.Config{}
 	cfg.Agent.Command = "echo 'Agent: %s'"
 	cfg.Validate.Command = "exit 1" // Always fail
-	
+
 	h := &mockHarness{}
 	r := NewWithMaxIterations(cfg, h, 3) // Only 3 iterations
-	
+
 	// Should fail after 3 iterations, not 15
 	err := r.Run("test task")
 	require.Error(t, err)
 	assert.Equal(t, "max iterations reached", err.Error())
-	
+
 	// Verify it only tried 3 times by checking the error
 	// (In real usage, you'd see 3 iteration messages, not 15)
 }
@@ -98,10 +98,10 @@ func TestRunner_IntegrationWithPassingValidation(t *testing.T) {
 	cfg := &config.Config{}
 	cfg.Agent.Command = "echo 'Agent running: %s'"
 	cfg.Validate.Command = "exit 0"
-	
+
 	h := &mockHarness{}
 	r := New(cfg, h)
-	
+
 	// Run with passing validation - should succeed on first iteration
 	err := r.Run("test task")
 	assert.NoError(t, err)
@@ -112,10 +112,10 @@ func TestRunner_IntegrationWithFailingValidation(t *testing.T) {
 	cfg := &config.Config{}
 	cfg.Agent.Command = "echo 'Agent running: %s'"
 	cfg.Validate.Command = "exit 1"
-	
+
 	h := &mockHarness{}
 	r := New(cfg, h)
-	
+
 	// Run with failing validation - should hit max iterations
 	err := r.Run("test task")
 	require.Error(t, err)

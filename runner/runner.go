@@ -13,15 +13,15 @@ import (
 const DefaultMaxIterations = 15
 
 type Runner struct {
-	config       *config.Config
-	harness      harness.Harness
+	config        *config.Config
+	harness       harness.Harness
 	maxIterations int
 }
 
 func New(cfg *config.Config, h harness.Harness) *Runner {
 	return &Runner{
-		config:       cfg,
-		harness:      h,
+		config:        cfg,
+		harness:       h,
 		maxIterations: DefaultMaxIterations,
 	}
 }
@@ -29,8 +29,8 @@ func New(cfg *config.Config, h harness.Harness) *Runner {
 // NewWithMaxIterations creates a Runner with custom max iterations
 func NewWithMaxIterations(cfg *config.Config, h harness.Harness, maxIter int) *Runner {
 	return &Runner{
-		config:       cfg,
-		harness:      h,
+		config:        cfg,
+		harness:       h,
 		maxIterations: maxIter,
 	}
 }
