@@ -59,7 +59,7 @@ func (r *Runner) Run(task string) error {
 
 func (r *Runner) runAgent(task string) error {
 	// Format command with task
-	cmd := fmt.Sprintf(r.config.Agent.Command, escapeTask(task))
+	cmd := fmt.Sprintf(r.config.Agent.Command, EscapeTask(task))
 
 	// Execute with non-interactive env (permission allow, CI)
 	c := exec.Command("bash", "-c", cmd)
@@ -84,6 +84,7 @@ func (r *Runner) validate() bool {
 	return true
 }
 
-func escapeTask(task string) string {
+// EscapeTask escapes a task string for safe use in shell commands.
+func EscapeTask(task string) string {
 	return strings.ReplaceAll(task, `"`, `\"`)
 }

@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jack/tatsu/config"
 	"github.com/jack/tatsu/harness"
 	"github.com/jack/tatsu/prd"
+	"github.com/jack/tatsu/runner"
 )
 
 // RunTaskInTUI runs a single task and sends progress messages to the TUI.
@@ -77,7 +77,7 @@ func runTaskLoop(send func(tea.Msg), cfg *config.Config, maxIter int, task strin
 }
 
 func runAgentCapture(send func(tea.Msg), cfg *config.Config, task string) error {
-	cmdStr := fmt.Sprintf(cfg.Agent.Command, escapeTask(task))
+	cmdStr := fmt.Sprintf(cfg.Agent.Command, runner.EscapeTask(task))
 	c := exec.Command("bash", "-c", cmdStr)
 	c.Env = harness.AgentEnv()
 	stdout, _ := c.StdoutPipe()
@@ -106,8 +106,5 @@ func runValidate(cfg *config.Config) (bool, string) {
 		return false, s
 	}
 	return true, s
-}
-func escapeTask(task string) string {
-	return strings.ReplaceAll(task, `"`, `\"`)
 }
 
